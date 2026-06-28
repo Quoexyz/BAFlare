@@ -30,10 +30,14 @@ The original version used a "WPF + WebView2" architecture. While effective, it r
 因此再次推荐原项目 [BASpark](https://github.com/DoomVoss/BASpark)。
 
 附上13thGen i7-1360P/核显笔记本/3cps/60fps下的任务管理器对比
+BAFlare:
 ![BAFlare](./images/BAFlare.PNG)
+原版WebView
 ![BAFlareWebView](./images/WebView.PNG)
 
 ## Credits & License
 *   Inspired by the original [BASpark](https://github.com/DoomVoss/BASpark).
 *   Visual style based on *Blue Archive* (Nexon / Yostar).
 *   Licensed under the **MIT License**.
+More settings...
+![Select Color](./images/1.PNG)
