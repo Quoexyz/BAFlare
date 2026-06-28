@@ -10,7 +10,7 @@ All UI strings and comments are in English.
 import customtkinter as ctk
 import winreg
 import subprocess
-import os
+import os, sys
 from pathlib import Path
 from tkinter import colorchooser
 
@@ -572,7 +572,13 @@ class SparkSettingsApp(ctk.CTk):
 
     # ---------- Auto-start management ----------
     def _get_exe_path(self):
-        return Path(__file__).parent / EXE_NAME
+        # 修正打包后的路径获取
+        import sys
+        if getattr(sys, "frozen", False):
+            base_dir = Path(sys.executable).parent
+        else:
+            base_dir = Path(__file__).parent
+        return base_dir / EXE_NAME
 
     def _set_autostart(self, enabled):
         exe_path = self._get_exe_path()
