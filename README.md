@@ -2,7 +2,7 @@
 A lightweight, native Windows mouse effect tool that reconstructs the Blue Archive UI style using C, SDL2, and Modern OpenGL.WITHOUT WebView; Inspired by BASpark
 ## Overview
 **BAFlare** is a high-performance rewrite of the original [BASpark](https://github.com/DoomVoss/BASpark).
-The original version used a "WPF + WebView2" architecture. While effective, it relied on Webview. This project replaces that stack entirely with a pure **C / SDL2 / OpenGL 3.3 Core** implementation.
+The original version used a "WPF + WebView2" architecture. While effective, it relied on Webview. This project replaces that stack entirely with a pure **C / SDL2 / OpenGL 3.3 Core** implementation.(And a python GUI) 
 ### Key Changes
 *   **No WebView**: Removes the dependency on the Edge/WebView2 runtime.
 *   **Native Performance**: Utilizes a custom Batch Renderer and modern OpenGL shaders for rendering, resulting in lower memory usage and faster startup.
