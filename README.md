@@ -21,3 +21,12 @@ The original version used a "WPF + WebView2" architecture. While effective, it r
 *   Inspired by the original [BASpark](https://github.com/DoomVoss/BASpark).
 *   Visual style based on *Blue Archive* (Nexon / Yostar).
 *   Licensed under the **MIT License**.
+
+小巧思：
+默认对隐藏光标的状态隐藏特效，游戏例如Minecraft无需(其实暂时无法)设置白名单即可完美使用
+精美的调色板和特效设置
+0.1%的极低CPU占用
+85MB的极低RAM占用
+这个项目禁主要用于我自己练习并没有很多时间丰富控制面板的功能，但C部分已经是完整的了
+实际上体感差距和BASpark差距不大 特别是你的电脑比较强劲的情况下
+因此再次推荐原项目[BASpark](https://github.com/DoomVoss/BASpark).
