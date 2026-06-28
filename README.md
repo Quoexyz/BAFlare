@@ -27,6 +27,7 @@ The original version used a "WPF + WebView2" architecture. While effective, it r
 精美的调色板和特效设置
 0.1%的极低CPU占用
 85MB的极低RAM占用
+休眠约0%占用
 这个项目禁主要用于我自己练习并没有很多时间丰富控制面板的功能，但C部分已经是完整的了
 实际上体感差距和BASpark差距不大 特别是你的电脑比较强劲的情况下
 因此再次推荐原项目[BASpark](https://github.com/DoomVoss/BASpark).
