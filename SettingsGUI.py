@@ -11,6 +11,7 @@ import customtkinter as ctk
 import winreg
 import subprocess
 import os, sys
+import ctypes
 from pathlib import Path
 from tkinter import colorchooser
 
@@ -255,11 +256,15 @@ class CustomColorCard(ctk.CTkFrame):
 
 
 class SparkSettingsApp(ctk.CTk):
-    """Main application window"""
     def __init__(self):
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
+            "com.baflare.settings"
+        )
+
         super().__init__()
 
         self.title("BA Flare Settings")
+        self.iconbitmap(self._get_icon_path())
         self.geometry("620x680")  # Compact size
         self.resizable(False, False)
 
@@ -559,7 +564,7 @@ class SparkSettingsApp(ctk.CTk):
             color=initial_color,
             title="Select Custom Color"
         )
-        if result[0] is not None:
+        if result is not None:
             rgb_tuple, hex_str = result
             r, g, b = [int(c) for c in rgb_tuple]
             self.custom_rgb = (r, g, b)
@@ -571,6 +576,12 @@ class SparkSettingsApp(ctk.CTk):
         return f"#{rgb[0]:02x}{rgb[1]:02x}{rgb[2]:02x}"
 
     # ---------- Auto-start management ----------
+    def _get_icon_path(self):
+        if getattr(sys, "frozen", False):
+            base_dir = sys._MEIPASS
+        else:
+            base_dir = os.path.dirname(__file__)
+        return os.path.join(base_dir, "BAFlare.ico")
     def _get_exe_path(self):
         # 修正打包后的路径获取
         import sys
