@@ -39,5 +39,5 @@ BAFlare:
 *   Inspired by the original [BASpark](https://github.com/DoomVoss/BASpark).
 *   Visual style based on *Blue Archive* (Nexon / Yostar).
 *   Licensed under the **MIT License**.
-More settings...
+## More settings...
 ![Select Color](./images/1.PNG)
