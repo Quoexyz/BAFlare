@@ -559,7 +559,7 @@ class SparkSettingsApp(ctk.CTk):
             color=initial_color,
             title="Select Custom Color"
         )
-        if result is not None:
+        if result[0] is not None:
             rgb_tuple, hex_str = result
             r, g, b = [int(c) for c in rgb_tuple]
             self.custom_rgb = (r, g, b)
