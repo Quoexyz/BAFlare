@@ -7,6 +7,9 @@
 #ifdef _WIN32
 HWND  g_main_hwnd       = NULL;
 MouseSpark *g_spark_ref = NULL;
+// DPI感知 但会在不刷新时被窗口合成器填黑 暂未解决 可能需要牺牲一直刷新? 先留在这里
+//WINUSERAPI BOOL WINAPI SetProcessDpiAwarenessContext(HANDLE);
+//#define DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2 ((HANDLE)-4)
 #endif
 
 /* ---------- Main ---------- */
@@ -14,9 +17,10 @@ int main(int argc, char **argv) {
     (void)argc; (void)argv;
     srand((unsigned)time(NULL));
 
-#ifdef _WIN32
-    /* 移除了 InitCommonControlsEx，因为不再使用 Win32 高级控件 */
-#endif
+//#ifdef _WIN32
+    // DPI 感知防止多显示器缩放比例不同导致坐标错位
+    //SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+//#endif
 
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
         fprintf(stderr, "SDL_Init failed: %s\n", SDL_GetError());
@@ -32,12 +36,41 @@ int main(int argc, char **argv) {
     //SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 
-    SDL_Rect display_bounds;
-    SDL_GetDisplayBounds(0, &display_bounds);
-    int win_x = display_bounds.x;
-    int win_y = display_bounds.y;
-    int win_w = display_bounds.w;
-    int win_h = display_bounds.h;
+    /* ---- 多屏支持：遍历所有显示器求并集 ---- */
+    int win_x = 0, win_y = 0, win_w = 0, win_h = 0;
+    int num_displays = SDL_GetNumVideoDisplays();
+    if (num_displays < 1) {
+        fprintf(stderr, "SDL_GetNumVideoDisplays failed: %s\n", SDL_GetError());
+        SDL_Quit();
+        return 1;
+    }
+
+    SDL_Rect bounds;
+    /* 初始化为第一个显示器的边界 */
+    if (SDL_GetDisplayBounds(0, &bounds) != 0) {
+        fprintf(stderr, "SDL_GetDisplayBounds failed: %s\n", SDL_GetError());
+        SDL_Quit();
+        return 1;
+    }
+    int min_x = bounds.x;
+    int min_y = bounds.y;
+    int max_x = bounds.x + bounds.w;
+    int max_y = bounds.y + bounds.h;
+
+    /* 遍历剩余显示器，求出所有显示器的包围盒（虚拟桌面） */
+    for (int i = 1; i < num_displays; ++i) {
+        if (SDL_GetDisplayBounds(i, &bounds) == 0) {
+            if (bounds.x < min_x) min_x = bounds.x;
+            if (bounds.y < min_y) min_y = bounds.y;
+            if (bounds.x + bounds.w > max_x) max_x = bounds.x + bounds.w;
+            if (bounds.y + bounds.h > max_y) max_y = bounds.y + bounds.h;
+        }
+    }
+
+    win_x = min_x;
+    win_y = min_y;
+    win_w = max_x - min_x;
+    win_h = max_y - min_y;
 
     SDL_Window *win = SDL_CreateWindow("Spark Cursor Effect",
                                        win_x, win_y, win_w, win_h,
@@ -152,12 +185,6 @@ int main(int argc, char **argv) {
 
         /* ---- 仅在系统光标可见时才触发特效 ---- */
         if (cursor_visible) {
-            int gmx, gmy;
-            Uint32 mouse_state = SDL_GetGlobalMouseState(&gmx, &gmy);
-            int mx = gmx - win_x;
-            int my = gmy - win_y;
-            int mouse_down = (mouse_state & SDL_BUTTON_LMASK) != 0;
-
             if (mouse_down) {
                 if (!spark.is_down) {
                     spark.is_down = 1;
