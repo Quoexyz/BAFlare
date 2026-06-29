@@ -26,7 +26,7 @@ The original version used a "WPF + WebView2" architecture. While effective, it r
 *   休眠约 0% 占用
 *   无需安装，随意存放在一个角落，通过配置程序设置开机启动即可
 实际上体感差距和 BASpark 差距不大，特别是你的电脑比较强劲的情况下。
-因此再次推荐原项目 [BASpark](https://github.com/DoomVoss/BASpark)。
+配套设施没有特别丰富，因此再次推荐原项目 [BASpark](https://github.com/DoomVoss/BASpark)。
 
 附上13thGen i7-1360P/核显笔记本/3cps/60fps下的任务管理器对比
 BAFlare:
