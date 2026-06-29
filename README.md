@@ -25,7 +25,6 @@ The original version used a "WPF + WebView2" architecture. While effective, it r
 *   0.1% 的极低 CPU 占用  85MB 的极低 RAM 占用 388KB的主程序体积
 *   休眠约 0% 占用
 *   无需安装，随意存放在一个角落，通过配置程序设置开机启动即可
-这个项目主要用于我自己练习，并没有很多时间丰富控制面板的功能，但 C 部分已经是完整的了。
 实际上体感差距和 BASpark 差距不大，特别是你的电脑比较强劲的情况下。
 因此再次推荐原项目 [BASpark](https://github.com/DoomVoss/BASpark)。
 
