@@ -32,6 +32,7 @@ int main(int argc, char **argv) {
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
     SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
+    // 暂时关闭抗锯齿，后面可能模糊同时光晕
     //SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
     //SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
@@ -57,7 +58,7 @@ int main(int argc, char **argv) {
     int max_x = bounds.x + bounds.w;
     int max_y = bounds.y + bounds.h;
 
-    /* 遍历剩余显示器，求出所有显示器的包围盒（虚拟桌面） */
+    /* 遍历剩余显示器，求出所有显示器的包围盒 */
     for (int i = 1; i < num_displays; ++i) {
         if (SDL_GetDisplayBounds(i, &bounds) == 0) {
             if (bounds.x < min_x) min_x = bounds.x;
@@ -101,7 +102,7 @@ int main(int argc, char **argv) {
     }
 
     setup_platform_window(win);
-
+    // 关闭抗锯齿第二处
     // glEnable(GL_MULTISAMPLE);
 
     /* 初始化渲染器和火花效果 */
@@ -129,23 +130,21 @@ int main(int argc, char **argv) {
     g_spark_ref = &spark;
 #endif
 
-    /* ---- 新增：读取注册表配置，失败则退出 ---- */
+    // 注册表读取
 #ifdef _WIN32
     if (!load_registry_config(&spark)) {
         SDL_GL_DeleteContext(ctx);
         SDL_DestroyWindow(win);
         SDL_Quit();
-        return 1; // load_registry_config 已经显示了错误消息框
+        return 1;
     }
-#else
-    /* 非 Windows 平台的默认配置（防止未初始化） */
-    apply_color(&spark, g_presets[0].r, g_presets[0].g, g_presets[0].b);
 #endif
 
     int running = 1;
     const int FPS = 60;
+    const int IDLE_FPS = 20;
     const Uint32 frame_delay = 1000 / FPS;
-    const Uint32 idle_delay = 50;
+    const Uint32 idle_delay = 1000/IDLE_FPS;
 
     int needs_clear = 1;
 
@@ -160,7 +159,6 @@ int main(int argc, char **argv) {
             if (ev.type == SDL_KEYDOWN) {
                 switch (ev.key.keysym.sym) {
                     case SDLK_ESCAPE: running = 0; break;
-                    /* 移除了其他快捷键，由外部设置 UI 控制 */
                     default: break;
                 }
             }
@@ -174,6 +172,7 @@ int main(int argc, char **argv) {
         int mouse_down = (mouse_state & SDL_BUTTON_LMASK) != 0;
 
         /* ---- 检测系统鼠标是否被隐藏（如游戏准星模式） ---- */
+        // 发现在1.12.2的Minecraft不起作用，BASpark也有同样的问题，待解决
         int cursor_visible = 1;
 #ifdef _WIN32
         CURSORINFO ci;

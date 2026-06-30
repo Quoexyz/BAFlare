@@ -9,11 +9,8 @@ void apply_color(MouseSpark *s, int r, int g, int b) {
     s->color[2] = b / 255.0f;
 }
 
-/* 移除 set_color_by_index 函数 */
-
 void spark_init(MouseSpark *s) {
-    // s->color_index = 0; // 移除
-    // 设置默认颜色为蓝色 (45, 175, 255)，防止未初始化
+    // 设置默认颜色为蓝色 (45, 175, 255) 后面可能会考虑不使用配置程序就默认原版
     apply_color(s, 45, 175, 255);
 
     s->scale   = 1.575f;

@@ -2,7 +2,6 @@
 #define SPARK_H
 
 #include "common.h"
-// 移除了 #include "config.h"
 
 typedef struct {
     float   x, y;
@@ -26,7 +25,6 @@ typedef struct {
 
 typedef struct {
     float color[3];
-    // int   color_index; // 移除：不再使用索引
     float scale;
     float opacity;
     float speed;
@@ -49,7 +47,6 @@ typedef struct {
 
 float randf(void);
 void apply_color(MouseSpark *s, int r, int g, int b);
-// void set_color_by_index(MouseSpark *s, int idx); // 移除
 void spark_init(MouseSpark *s);
 float clampf01(float a);
 float spark_alpha(const MouseSpark *s, float a);

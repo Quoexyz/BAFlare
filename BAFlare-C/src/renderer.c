@@ -169,7 +169,6 @@ void batch_end(Batch *b) {
     glBindVertexArray(b->vao);
     glBindBuffer(GL_ARRAY_BUFFER, b->vbo);
     glBufferData(GL_ARRAY_BUFFER, MAX_VERTS * sizeof(Vertex), NULL, GL_DYNAMIC_DRAW);
-    // 然后正常上传数据
     glBufferSubData(GL_ARRAY_BUFFER, 0, b->idx * sizeof(Vertex), b->buf);
 
     for (int i = 0; i < b->cmd_count; i++) {
@@ -177,8 +176,6 @@ void batch_end(Batch *b) {
         glActiveTexture(GL_TEXTURE0);
         // 如果 cmd 没有指定纹理，绑定白纹理
         glBindTexture(GL_TEXTURE_2D, c->tex ? c->tex : g_white_tex);
-        // 移除 glUniform1i(g_u_use_tex, ...) 调用
-
         glDrawArrays(c->mode, c->start, c->count);
     }
     glBindVertexArray(0);
