@@ -94,12 +94,22 @@ void spark_boom(MouseSpark *s, float x, float y) {
         sp->rot = (randf() < 0.5f) ? 0.0f : (float)M_PI;
         sp->base_size = bs;
         sp->s = bs;
-        sp->a = 0.6f;
+        sp->a = 0.8f;
         sp->a0 = sp->a;
         sp->f = 0.93f;
         sp->start_time = SDL_GetTicks();
         sp->phase_offset = -0.5f * (float)M_PI;
     }
+}
+
+/* 样条插值，使拖尾曲线更圆滑 */
+static float catmull_rom(float p0, float p1, float p2, float p3, float t) {
+    float t2 = t * t;
+    float t3 = t2 * t;
+    return 0.5f * ((2.0f * p1) +
+                   (-p0 + p2) * t +
+                   (2.0f * p0 - 5.0f * p1 + 4.0f * p2 - p3) * t2 +
+                   (-p0 + 3.0f * p1 - 3.0f * p2 + p3) * t3);
 }
 
 void spark_update_and_draw(MouseSpark *s, Uint32 now) {
@@ -121,13 +131,34 @@ void spark_update_and_draw(MouseSpark *s, Uint32 now) {
         int n = s->trail_count - 1;
         float cr = s->color[0], cg = s->color[1], cb = s->color[2];
         float thickness = 5.0f * s->scale;
+        #define SUBDIV 8
         for (int i = 0; i < n; i++) {
-            float p0[2] = { s->trail[i].x,   s->trail[i].y   };
-            float p1[2] = { s->trail[i+1].x, s->trail[i+1].y };
-            float alpha = spark_alpha(s, (float)i / (float)n);
-            float col[4] = { cr, cg, cb, alpha };
-            batch_thick_line(&g_batch, p0, p1, col, thickness);
+            /* Catmull-Rom: 用前后各一个邻点作为控制点 */
+            int i0 = (i > 0)     ? i - 1 : 0;
+            int i1 = i;
+            int i2 = i + 1;
+            int i3 = (i + 2 <= n) ? i + 2 : n;
+
+            float p0x = s->trail[i0].x, p0y = s->trail[i0].y;
+            float p1x = s->trail[i1].x, p1y = s->trail[i1].y;
+            float p2x = s->trail[i2].x, p2y = s->trail[i2].y;
+            float p3x = s->trail[i3].x, p3y = s->trail[i3].y;
+
+            float prev_x = p1x, prev_y = p1y;
+            for (int step = 1; step <= SUBDIV; step++) {
+                float t = (float)step / (float)SUBDIV;
+                float cx = catmull_rom(p0x, p1x, p2x, p3x, t);
+                float cy = catmull_rom(p0y, p1y, p2y, p3y, t);
+                float frac = ((float)i + t) / (float)n;
+                float alpha = spark_alpha(s, frac);
+                float col[4] = { cr, cg, cb, alpha };
+                float pp[2] = { prev_x, prev_y };
+                float cp[2] = { cx, cy };
+                batch_thick_line(&g_batch, pp, cp, col, thickness);
+                prev_x = cx; prev_y = cy;
+            }
         }
+        #undef SUBDIV
     }
 
     /* ---- Shock waves ---- */
@@ -200,7 +231,7 @@ void spark_update_and_draw(MouseSpark *s, Uint32 now) {
         col[3] = alpha;
 
         float half = sp->s * 0.6f;
-        float h = half * 1.7320508f; /* 等边三角形高 = half * sqrt(3)，底边 = 2*half */
+        float h = half * 1.7320508f; // 等边设置根号3
         float cos_r = cosf(sp->rot), sin_r = sinf(sp->rot);
         float sx = sp->x, sy = sp->y;
         float local[3][2] = {
