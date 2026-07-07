@@ -7,7 +7,7 @@ typedef struct {
     float   x, y;
     float   vx, vy;
     float   rot;
-    float   base_size, s, a, f;
+    float   base_size, s, a, a0, f;
     Uint32  start_time;
     float   phase_offset;
 } Spark;

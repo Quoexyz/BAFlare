@@ -52,7 +52,7 @@ void spark_create_move_sparks(MouseSpark *s, float x, float y) {
         if (randf() < 0.3f && s->spark_count < MAX_SPARKS) {
             float a = randf() * 2.0f * (float)M_PI;
             float spd = (s->scale / 1.5f) * 0.7f;
-            float bs = 13.5f * s->scale * (0.8f + randf() * 0.2f);
+            float bs = 10.5f * s->scale * (0.8f + randf() * 0.2f);
             Spark *sp = &s->sparks[s->spark_count++];
             sp->x  = x + cosf(a) * 20.0f * s->scale;
             sp->y  = y + sinf(a) * 20.0f * s->scale;
@@ -62,9 +62,10 @@ void spark_create_move_sparks(MouseSpark *s, float x, float y) {
             sp->base_size = bs;
             sp->s = bs;
             sp->a = 0.7f;
+            sp->a0 = sp->a;
             sp->f = 0.95f;
-            sp->start_time = SDL_GetTicks();
-            sp->phase_offset = randf() * 2.0f * (float)M_PI;
+        sp->start_time = SDL_GetTicks();
+        sp->phase_offset = -0.5f * (float)M_PI;
         }
     }
 }
@@ -93,10 +94,11 @@ void spark_boom(MouseSpark *s, float x, float y) {
         sp->rot = (randf() < 0.5f) ? 0.0f : (float)M_PI;
         sp->base_size = bs;
         sp->s = bs;
-        sp->a = 1.0f;
+        sp->a = 0.6f;
+        sp->a0 = sp->a;
         sp->f = 0.93f;
         sp->start_time = SDL_GetTicks();
-        sp->phase_offset = randf() * 2.0f * (float)M_PI;
+        sp->phase_offset = -0.5f * (float)M_PI;
     }
 }
 
@@ -179,15 +181,18 @@ void spark_update_and_draw(MouseSpark *s, Uint32 now) {
         sp->vx *= powf(sp->f, fs);
         sp->vy *= powf(sp->f, fs);
         sp->a  -= 0.023f * fs;
-        sp->s  = sp->base_size * sp->a;
+        float p = 1.0f - sp->a / sp->a0;            /* 生命进度 0→1 */
+        if (p < 0.0f) p = 0.0f;
+        float size_factor = sinf(powf(p, 0.65f) * (float)M_PI);  /* 先变大(0→1)再变小(1→0) - powf偏斜使变大更快 */
+        sp->s  = sp->base_size * size_factor;
         if (sp->s < 0.0f) sp->s = 0.0f;
-        if (sp->a <= 0.0f || sp->s <= 0.0f) {
+        if (sp->a <= 0.0f) {
             s->sparks[i] = s->sparks[s->spark_count - 1];
             s->spark_count--;
             continue;
         }
         Uint32 elapsed = now - sp->start_time;
-        float cp = (sinf(elapsed * (2.0f * (float)M_PI / 500.0f) + sp->phase_offset) + 1.0f) * 0.5f;
+        float cp = (sinf(elapsed * (2.0f * (float)M_PI / 250.0f) + sp->phase_offset) + 1.0f) * 0.5f;
         float alpha = spark_alpha(s, sp->a) * (0.6f + cp * 0.4f);
         float col[4];
         if (cp < 0.5f) { col[0]=1; col[1]=1; col[2]=1; }
@@ -195,12 +200,13 @@ void spark_update_and_draw(MouseSpark *s, Uint32 now) {
         col[3] = alpha;
 
         float half = sp->s * 0.6f;
+        float h = half * 1.7320508f; /* 等边三角形高 = half * sqrt(3)，底边 = 2*half */
         float cos_r = cosf(sp->rot), sin_r = sinf(sp->rot);
         float sx = sp->x, sy = sp->y;
         float local[3][2] = {
-            { 0.0f, -sp->s },
-            { half,  half  },
-            { -half, half  }
+            { 0.0f,  -2.0f * h / 3.0f },
+            { half,   h / 3.0f },
+            { -half,  h / 3.0f }
         };
         float tp[3][2];
         for (int k = 0; k < 3; k++) {
