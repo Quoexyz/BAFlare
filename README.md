@@ -27,6 +27,7 @@ The original version used a "WPF + WebView2" architecture. While effective, it r
 *   默认对隐藏光标的状态隐藏特效，游戏例如 Minecraft 无需（其实暂时无法）设置白名单即可完美使用。
 *   极低 CPU 占用 极低 RAM 占用 388KB的主程序体积
 *   休眠空闲时减缓刷新裁剪工作集，约 0% CPU 占用 2MB内存占用
+*   尽量(更原版的粒子特效)
 *   无需安装，随意存放在一个角落，通过配置程序设置开机启动即可
 实际上体感差距和 BASpark 差距不大，特别是你的电脑比较强劲的情况下，事实上很大一部分消耗集中在Windows窗口管理器的透明叠加上，不过我正在尝试解决。
 配套设施没有特别丰富，因此再次推荐原项目 [BASpark](https://github.com/DoomVoss/BASpark)。
