@@ -62,7 +62,7 @@ target_include_directories(main PRIVATE
 )
 
 # Link libraries
-target_link_libraries(main ${MAIN_LIBS} dwmapi comctl32 uxtheme)
+target_link_libraries(main ${MAIN_LIBS} dwmapi comctl32 uxtheme psapi)
 
 
 # On Windows, GUI applications do not show a console by default,
