@@ -5,7 +5,6 @@ A lightweight, native Windows mouse effect tool that reconstructs the Blue Archi
 
 如果你喜欢这个项目请送个STAR吧谢谢la
 
-* 本软件非BlueArchive官方作品 视觉风格灵感来源于 Nexon / Yostar 《Blue Archive》，相关著作权归原作者所有，本项目任何关于类似风格粒子特效风格的预设尊重并遵循并其官方二创要求且不盈利。本软件独立开发，并未引入任何BlueArchive官方版本的资源文件或代码，利用本仓库的代码例如渲染管线依据MIT协议，但由于违背Nexon / Yostar 《Blue Archive》官方二创要求例如盈利目的的分发或破坏有关方形象等的，涉及著作权侵权的，与本项目作者无关，本项目仅根据协议提供鼠标特效基础框架。
 * This software is not an official work of Blue Archive. The visual style is inspired by Nexon/Yostar's Blue Archive. The relevant copyrights belong to the original authors. Any presets in this project related to similar style particle effects respect and comply with the official secondary creation requirements of the original creators and are non-profit. This software is independently developed and does not incorporate any resource files or code from the official version of Blue Archive. The code used in this repository, such as the rendering pipeline, is licensed under the MIT License. However, any distribution that violates the official secondary creation requirements of Nexon/Yostar's Blue Archive, such as for profit or damaging the image of the relevant parties, involving copyright infringement, is not related to the author of this project. This project only provides a basic framework for mouse effects under the MIT License.
 
 
@@ -26,8 +25,8 @@ The original version used a "WPF + WebView2" architecture. While effective, it r
 *   **Graphics**: OpenGL 3.3 support
 ## 小巧思
 *   默认对隐藏光标的状态隐藏特效，游戏例如 Minecraft 无需（其实暂时无法）设置白名单即可完美使用。
-*   0.1% 的极低 CPU 占用  85MB 的极低 RAM 占用 388KB的主程序体积
-*   休眠约 0% 占用
+*   极低 CPU 占用 极低 RAM 占用 388KB的主程序体积
+*   休眠空闲时减缓刷新裁剪工作集，约 0% CPU 占用 2MB内存占用
 *   无需安装，随意存放在一个角落，通过配置程序设置开机启动即可
 实际上体感差距和 BASpark 差距不大，特别是你的电脑比较强劲的情况下，事实上很大一部分消耗集中在Windows窗口管理器的透明叠加上，不过我正在尝试解决。
 配套设施没有特别丰富，因此再次推荐原项目 [BASpark](https://github.com/DoomVoss/BASpark)。
