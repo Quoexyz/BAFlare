@@ -5,11 +5,39 @@
 
 /* ---------- Globals ---------- */
 #ifdef _WIN32
+#include <psapi.h>
 HWND  g_main_hwnd       = NULL;
 MouseSpark *g_spark_ref = NULL;
 // DPI感知 但会在不刷新时被窗口合成器填黑 暂未解决 可能需要牺牲一直刷新? 先留在这里
 //WINUSERAPI BOOL WINAPI SetProcessDpiAwarenessContext(HANDLE);
 //#define DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2 ((HANDLE)-4)
+
+/* 查询系统 CPU 使用率（两次调用间的时间间隔越大越准确） */
+static float get_system_cpu_usage(void) {
+    static int first = 1;
+    static ULARGE_INTEGER prev_idle, prev_kernel, prev_user;
+    FILETIME ft_idle, ft_kernel, ft_user;
+    GetSystemTimes(&ft_idle, &ft_kernel, &ft_user);
+    ULARGE_INTEGER idle, kernel, user;
+    idle.LowPart   = ft_idle.dwLowDateTime;
+    idle.HighPart  = ft_idle.dwHighDateTime;
+    kernel.LowPart = ft_kernel.dwLowDateTime;
+    kernel.HighPart= ft_kernel.dwHighDateTime;
+    user.LowPart   = ft_user.dwLowDateTime;
+    user.HighPart  = ft_user.dwHighDateTime;
+    if (first) {
+        prev_idle = idle; prev_kernel = kernel; prev_user = user;
+        first = 0;
+        return 0.0f;
+    }
+    ULONGLONG idle_diff   = idle.QuadPart   - prev_idle.QuadPart;
+    ULONGLONG kernel_diff = kernel.QuadPart - prev_kernel.QuadPart;
+    ULONGLONG user_diff   = user.QuadPart   - prev_user.QuadPart;
+    ULONGLONG total       = kernel_diff + user_diff;
+    prev_idle = idle; prev_kernel = kernel; prev_user = user;
+    if (total == 0) return 0.0f;
+    return (float)(total - idle_diff) / (float)total * 100.0f;
+}
 #endif
 
 /* ---------- Main ---------- */
@@ -147,6 +175,7 @@ int main(int argc, char **argv) {
     const Uint32 idle_delay = 1000/IDLE_FPS;
 
     int needs_clear = 1;
+    Uint32 last_trim_time = 0;   /* 上次裁剪工作集的时间戳 */
 
     while (running) {
         Uint32 frame_start = SDL_GetTicks();
@@ -220,6 +249,16 @@ int main(int argc, char **argv) {
                 needs_clear = 0;
             }
             spark.last_frame_time = now;
+
+#ifdef _WIN32
+            // 每 30s 空闲且系统 CPU < 50% 时裁剪工作集
+            if (now - last_trim_time >= 30000) {
+                if (get_system_cpu_usage() < 50.0f) {
+                    EmptyWorkingSet(GetCurrentProcess());
+                }
+                last_trim_time = now;
+            }
+#endif
         }
 
         Uint32 frame_time = SDL_GetTicks() - frame_start;
