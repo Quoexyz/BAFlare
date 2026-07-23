@@ -1,6 +1,10 @@
 # BAFlare
 A lightweight, native Windows mouse effect tool that reconstructs the Blue Archive UI style using C, SDL2, and Modern OpenGL.WITHOUT WebView; Inspired by BASpark
 
+WebVer: https://baf.quoex.moe/ You can add the same effect to your own site by including:
+
+`<script src="https://baf.quoex.moe/mouse-spark-trail.js"></script>`
+
 ![BAFlare Effect](./images/2.PNG)
 
 如果你喜欢这个项目请送个STAR吧谢谢la
