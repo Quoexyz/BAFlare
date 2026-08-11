@@ -9,7 +9,7 @@ WebVer: https://baf.quoex.moe/ You can add the same effect to your own site by i
 * 程序的目前状态已经完全满足了作者本人日常使用和审美要求(虽然和原版不完全相同但我认为足够实用)
 * 这个项目和我的专业方向没有任何关系，我并没有精力维护
 * CialloKing/ba-click-fx是一个"逐参数移植"的项目，如果你想要还原可以看看
-
+* 虽然如此但未来我仍然可能以此为基础创建新的光标特效，如“Quoexyz/PhiFlare”
 ![BAFlare Effect](./images/2.PNG)
 
 
