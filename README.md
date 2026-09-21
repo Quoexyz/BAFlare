@@ -1,5 +1,5 @@
 # BAFlare
-A lightweight, native Windows mouse effect tool that reconstructs the Blue Archive UI style using C, SDL2, and Modern OpenGL.WITHOUT WebView; Inspired by BASpark
+A lightweight, native Windows mouse effect tool that reconstructs the Blue Archive UI style using C, LVGL and Modern OpenGL.WITHOUT WebView; Inspired by BASpark
 
 WebVer: https://baf.quoex.moe/ You can add the same effect to your own site by including:
 
@@ -14,7 +14,7 @@ WebVer: https://baf.quoex.moe/ You can add the same effect to your own site by i
 * If you are a rights holder and believe that any aspect of this project infringes upon your intellectual property rights, please contact “jdfx54@gmail.com” with relevant evidence. The author commits to reviewing and, if appropriate, removing or modifying the disputed content within a reasonable timeframe.
 ## Overview
 **BAFlare** is a high-performance rewrite of the original [BASpark](https://github.com/DoomVoss/BASpark).
-This project uses **C / SDL2 / OpenGL 3.3 Core**.(And a LVGL GUI) 
+This project uses **C / OpenGL 3.3 Core**.(And a LVGL GUI) 
 ## Credits & License
 *   Inspired by the original [BASpark](https://github.com/DoomVoss/BASpark).
 *   Visual STYLE inspired by *Blue Archive* (Nexon / Yostar).
