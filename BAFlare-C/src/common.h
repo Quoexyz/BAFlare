@@ -21,6 +21,7 @@
 #pragma comment(lib, "comctl32.lib")
 #pragma comment(lib, "user32.lib")
 #pragma comment(lib, "gdi32.lib")
+#pragma comment(lib, "psapi.lib")
 /* 启用 Common Controls 6.0 视觉样式 */
 #ifdef _MSC_VER
 #pragma comment(linker, \
@@ -37,10 +38,11 @@
 #define M_PI 3.14159265358979323846
 #endif
 
-#define MAX_VERTS   10000
+/* 以下容量参数与 JS 参考实现保持一致（JS 版：MAX_TRAIL 32 / MAX_SPARKS 180 / MAX_WAVES 12） */
+#define MAX_VERTS   16384   /* 顶点预算：12 个波 + 180 个火花 + 32 点拖尾的最坏情况约 11k 顶点 */
 #define MAX_CMDS    8192
-#define MAX_SPARKS  64
-#define MAX_WAVES   64
-#define MAX_TRAIL   16
+#define MAX_SPARKS  180
+#define MAX_WAVES   12
+#define MAX_TRAIL   32
 
 #endif /* COMMON_H */

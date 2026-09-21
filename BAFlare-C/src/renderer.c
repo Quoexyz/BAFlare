@@ -197,18 +197,26 @@ void batch_thick_line(Batch *b, const float p0[2], const float p1[2],
     float dx = p1[0] - p0[0], dy = p1[1] - p0[1];
     float L = hypotf(dx, dy);
     if (L < 1e-6f) return;
-    float nx = -dy / L * thickness * 0.5f;
-    float ny =  dx / L * thickness * 0.5f;
-    float a0x = p0[0] + nx, a0y = p0[1] + ny;
-    float b0x = p0[0] - nx, b0y = p0[1] - ny;
-    float a1x = p1[0] + nx, a1y = p1[1] + ny;
-    float b1x = p1[0] - nx, b1y = p1[1] - ny;
-    batch_v(b, a0x, a0y, col[0], col[1], col[2], col[3], 0, 0);
+    /* JS 版是用 canvas 的 stroke + lineCap='round' 画的，相邻小段在拐角外侧会被圆头填满；
+       裸矩形带会在拐角留下楔形缺口，看起来一段一段的、很"碎"。
+       这里把每小段两端各向外延半个线宽，让相邻段互相重叠把缺口盖掉——效果接近圆头，
+       而且不多产生一个顶点（真给每个端点补扇形，顶点数要翻好几倍，见 common.h 的预算）。 */
+    float half = thickness * 0.5f;
+    float ux = dx / L, uy = dy / L;
+    float a0x = p0[0] - ux * half, a0y = p0[1] - uy * half;
+    float a1x = p1[0] + ux * half, a1y = p1[1] + uy * half;
+    float nx = -uy * half;
+    float ny =  ux * half;
+    float b0x = a0x - nx, b0y = a0y - ny;
+    float c0x = a0x + nx, c0y = a0y + ny;
+    float b1x = a1x - nx, b1y = a1y - ny;
+    float c1x = a1x + nx, c1y = a1y + ny;
     batch_v(b, b0x, b0y, col[0], col[1], col[2], col[3], 0, 0);
-    batch_v(b, a1x, a1y, col[0], col[1], col[2], col[3], 0, 0);
-    batch_v(b, a1x, a1y, col[0], col[1], col[2], col[3], 0, 0);
-    batch_v(b, b0x, b0y, col[0], col[1], col[2], col[3], 0, 0);
+    batch_v(b, c0x, c0y, col[0], col[1], col[2], col[3], 0, 0);
     batch_v(b, b1x, b1y, col[0], col[1], col[2], col[3], 0, 0);
+    batch_v(b, b1x, b1y, col[0], col[1], col[2], col[3], 0, 0);
+    batch_v(b, c0x, c0y, col[0], col[1], col[2], col[3], 0, 0);
+    batch_v(b, c1x, c1y, col[0], col[1], col[2], col[3], 0, 0);
 }
 
 void batch_thick_arc(Batch *b, float cx, float cy, float radius,

@@ -40,6 +40,30 @@ static float get_system_cpu_usage(void) {
 }
 #endif
 
+/* ---------- Frame pacing ---------- */
+/*
+ * 等待时保持消息泵运转。
+ * 低层鼠标钩子的回调要在主线程的消息循环里被调用，如果一口气 SDL_Delay 很久，
+ * 系统在分发鼠标事件时会被我们拖住（表现为全系统鼠标发滞）。所以把长等待切成小片，
+ * 每片之间泵一次消息；一帧内的短补偿直接睡，避免影响帧率。
+ */
+static void wait_keeping_pump(Uint32 remaining_ms) {
+    Uint32 deadline;
+    if (remaining_ms == 0) return;
+    if (remaining_ms <= 8) {
+        SDL_Delay(remaining_ms);
+        return;
+    }
+    deadline = SDL_GetTicks() + remaining_ms;
+    while ((Sint32)(deadline - SDL_GetTicks()) > 0) {
+        Sint32 left;
+        SDL_PumpEvents();
+        left = (Sint32)(deadline - SDL_GetTicks());
+        if (left <= 0) break;
+        SDL_Delay((Uint32)(left < 4 ? left : 4));
+    }
+}
+
 /* ---------- Main ---------- */
 int main(int argc, char **argv) {
     (void)argc; (void)argv;
@@ -133,13 +157,15 @@ int main(int argc, char **argv) {
     // 关闭抗锯齿第二处
     // glEnable(GL_MULTISAMPLE);
 
+    /* 事件驱动的鼠标输入源：WH_MOUSE_LL 低层钩子，取代原来的逐帧采样。
+       它的回调在主线程泵消息时被调用，所以每帧的 SDL_PollEvent 就是驱动；
+       线程要求和坐标空间说明见 platform_win.c。装不上时返回 0，主循环退回采样。 */
+    int input_event_driven = platform_input_init();
+
     /* 初始化渲染器和火花效果 */
     g_prog = make_program(VS_SRC, FS_SRC);
     glUseProgram(g_prog);
     g_u_proj    = glGetUniformLocation(g_prog, "u_proj");
-    g_u_use_tex = glGetUniformLocation(g_prog, "u_use_tex");
-    g_u_tex     = glGetUniformLocation(g_prog, "u_tex");
-    glUniform1i(g_u_tex, 0);
 
     glViewport(0, 0, win_w, win_h);
     float proj[16];
@@ -149,8 +175,15 @@ int main(int argc, char **argv) {
     batch_init(&g_batch, MAX_VERTS);
 
     // 在初始化时固定混合状态
+    // 必须用 glBlendFuncSeparate，不能用 glBlendFunc：后者的因子对 RGBA 四个通道都生效，
+    // 在清空的透明底上画 alpha=a 的东西会得到 dst.a = a*a（alpha 被平方），而 canvas 的
+    // source-over 里 alpha 是线性叠加的（dst.a = a）。窗口是靠 DwmExtendFrameIntoClientArea
+    // 的玻璃合成显示透明的，合成公式是 底色*(1-dst.a) + dst.rgb，所以 alpha 被平方后整个
+    // 特效都比 JS 更透明 —— 白色背景上几乎看不见（深色背景因为 rgb 仍按 a 走，反而还行）。
+    // 分开设置后：RGB 走标准 alpha 混合、alpha 走线性叠加，与 canvas 的 source-over 等价，
+    // 输出的正好是预乘 alpha 格式，也就是 DWM 合成期望的格式。
     glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+    glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
     MouseSpark spark;
     spark_init(&spark);
@@ -194,34 +227,41 @@ int main(int argc, char **argv) {
         }
         if (!running) break;
 
-        int gmx, gmy;
-        Uint32 mouse_state = SDL_GetGlobalMouseState(&gmx, &gmy);
-        int mx = gmx - win_x;
-        int my = gmy - win_y;
-        int mouse_down = (mouse_state & SDL_BUTTON_LMASK) != 0;
-
-        /* ---- 检测系统鼠标是否被隐藏（如游戏准星模式） ---- */
-        // 发现在1.12.2的Minecraft不起作用，BASpark也有同样的问题，待解决
-        int cursor_visible = 1;
-#ifdef _WIN32
-        CURSORINFO ci;
-        ci.cbSize = sizeof(CURSORINFO);
-        if (GetCursorInfo(&ci)) {
-            cursor_visible = (ci.flags & CURSOR_SHOWING) != 0;
+        /* ---- 取这一帧累积的鼠标输入 ---- */
+        PlatformInputFrame in;
+        if (input_event_driven) {
+            platform_input_read(&in);
+        } else {
+            /* 兜底：钩子没装上时退回逐帧采样（会漏短按，但至少能用） */
+            int gmx = 0, gmy = 0;
+            Uint32 mouse_state = SDL_GetGlobalMouseState(&gmx, &gmy);
+            in.has_pos     = 1;
+            in.pos_x       = gmx;
+            in.pos_y       = gmy;
+            in.is_down     = (mouse_state & SDL_BUTTON_LMASK) != 0;
+            in.click_x     = gmx;
+            in.click_y     = gmy;
+            /* 采样没有事件，只能靠和上一帧比较补出"按下"这个边沿 */
+            in.click_count = (in.is_down && !spark.is_down) ? 1 : 0;
         }
-#endif
 
         /* ---- 仅在系统光标可见时才触发特效 ---- */
-        if (cursor_visible) {
-            if (mouse_down) {
-                if (!spark.is_down) {
-                    spark.is_down = 1;
-                    spark_boom(&spark, (float)mx, (float)my);
-                } else {
-                    spark_create_move_sparks(&spark, (float)mx, (float)my);
-                }
+        if (platform_cursor_visible()) {
+            if (in.click_count > 0) {
+                /* 按下是"事件"：即使按下和抬起落在同一帧内，也一定炸出这一下 */
+                spark.is_down = 1;
+                spark_boom(&spark, (float)(in.click_x - win_x), (float)(in.click_y - win_y));
             } else {
-                spark.is_down = 0;
+                spark.is_down = in.is_down;
+            }
+            /* 拖尾：按住左键才产生，每次喂"这一帧最后的位置"。
+               不逐事件喂是有依据的：浏览器的 mousemove 本来就被合并到每帧一次，
+               JS 参考实现实际也是每帧一个点；而每帧喂几百个原始事件会把 MAX_TRAIL
+               的环形缓冲瞬间填满，尾巴反而缩成一截。 */
+            if (spark.is_down && in.has_pos) {
+                spark_create_move_sparks(&spark,
+                                         (float)(in.pos_x - win_x),
+                                         (float)(in.pos_y - win_y));
             }
         } else {
             // 鼠标被隐藏，重置按下状态，防止切回桌面时误触爆炸
@@ -264,11 +304,13 @@ int main(int argc, char **argv) {
         Uint32 frame_time = SDL_GetTicks() - frame_start;
         Uint32 target_delay = has_effects ? frame_delay : idle_delay;
         if (frame_time < target_delay) {
-            SDL_Delay(target_delay - frame_time);
+            wait_keeping_pump(target_delay - frame_time);
         }
     }
 
     /* 清理资源 */
+    platform_input_shutdown();
+
     glDeleteProgram(g_prog);
     glDeleteVertexArrays(1, &g_batch.vao);
     glDeleteBuffers(1, &g_batch.vbo);

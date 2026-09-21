@@ -1,6 +1,10 @@
 #include "spark.h"
 #include "renderer.h"
 
+/* 与 JS 参考实现对齐的参数（JS 版里的 PULSE_PERIOD 等） */
+#define PULSE_PERIOD_MS 350.0f   /* 火花颜色脉冲周期：JS 是 350，之前这里是 250，闪得快了 40% */
+#define SPARK_MIN_SIZE  0.05f    /* 尺寸缩到这么小就回收，早点把名额让给新火花 */
+
 float randf(void) { return (float)rand() / (float)RAND_MAX; }
 
 void apply_color(MouseSpark *s, int r, int g, int b) {
@@ -16,7 +20,7 @@ void spark_init(MouseSpark *s) {
     s->scale   = 1.575f;
     s->opacity = 1.0f;
     s->speed   = 1.0f;
-    s->max_trail = 16;
+    s->max_trail = MAX_TRAIL;
     s->wave_count = 0;
     s->spark_count = 0;
     s->trail_count = 0;
@@ -159,6 +163,15 @@ void spark_update_and_draw(MouseSpark *s, Uint32 now) {
             }
         }
         #undef SUBDIV
+
+        /* 头部收一个圆头：JS 的 lineCap='round' 在最新那个点上是半圆，裸矩形带是平头，
+           这里补一个同色圆盘。整条尾巴只有头部的 alpha 是 1，只有这里看得见，所以只补一处。 */
+        {
+            int head = s->trail_count - 1;
+            float head_col[4] = { cr, cg, cb, spark_alpha(s, 1.0f) };
+            batch_filled_circle(&g_batch, s->trail[head].x, s->trail[head].y,
+                                thickness * 0.5f, head_col, 10);
+        }
     }
 
     /* ---- Shock waves ---- */
@@ -217,13 +230,19 @@ void spark_update_and_draw(MouseSpark *s, Uint32 now) {
         float size_factor = sinf(powf(p, 0.65f) * (float)M_PI);  /* 先变大(0→1)再变小(1→0) - powf偏斜使变大更快 */
         sp->s  = sp->base_size * size_factor;
         if (sp->s < 0.0f) sp->s = 0.0f;
-        if (sp->a <= 0.0f) {
+        if (sp->a <= 0.0f || sp->s <= SPARK_MIN_SIZE) {
             s->sparks[i] = s->sparks[s->spark_count - 1];
             s->spark_count--;
             continue;
         }
-        Uint32 elapsed = now - sp->start_time;
-        float cp = (sinf(elapsed * (2.0f * (float)M_PI / 250.0f) + sp->phase_offset) + 1.0f) * 0.5f;
+        /* now 是主循环帧首取的时钟，而 start_time 是同一帧里稍后（点击/移动那一刻）取的，
+           SDL_GetTicks() 只有 1ms 粒度：一旦跨过毫秒刻度就是 now < start_time，
+           Uint32 相减会回绕成 42.9 亿 —— cp 立刻变成随机值，而且这个量级的 float 精度
+           已经不够（每约 445ms 才跳一步），粒子会出生就是随机颜色、之后基本不再变色。
+           JS 那边是有符号浮点减法，负的 elapsed 被 sin 平滑吃掉（≈0，出生为白），
+           所以 clamp 到 0 才是与 JS 等价的行为。 */
+        Uint32 elapsed = (now >= sp->start_time) ? (now - sp->start_time) : 0;
+        float cp = (sinf(elapsed * (2.0f * (float)M_PI / PULSE_PERIOD_MS) + sp->phase_offset) + 1.0f) * 0.5f;
         float alpha = spark_alpha(s, sp->a) * (0.6f + cp * 0.4f);
         float col[4];
         if (cp < 0.5f) { col[0]=1; col[1]=1; col[2]=1; }
