@@ -26,7 +26,7 @@ void spark_init(MouseSpark *s) {
     s->trail_count = 0;
     s->is_down = 0;
     s->has_last_pos = 0;
-    s->last_frame_time = SDL_GetTicks();
+    s->last_frame_time = now_ms();
     s->base_frame_ms = 1000.0f / 60.0f;
 }
 
@@ -68,7 +68,7 @@ void spark_create_move_sparks(MouseSpark *s, float x, float y) {
             sp->a = 0.7f;
             sp->a0 = sp->a;
             sp->f = 0.95f;
-        sp->start_time = SDL_GetTicks();
+        sp->start_time = now_ms();
         sp->phase_offset = -0.5f * (float)M_PI;
         }
     }
@@ -101,7 +101,7 @@ void spark_boom(MouseSpark *s, float x, float y) {
         sp->a = 0.8f;
         sp->a0 = sp->a;
         sp->f = 0.93f;
-        sp->start_time = SDL_GetTicks();
+        sp->start_time = now_ms();
         sp->phase_offset = -0.5f * (float)M_PI;
     }
 }
@@ -236,7 +236,7 @@ void spark_update_and_draw(MouseSpark *s, Uint32 now) {
             continue;
         }
         /* now 是主循环帧首取的时钟，而 start_time 是同一帧里稍后（点击/移动那一刻）取的，
-           SDL_GetTicks() 只有 1ms 粒度：一旦跨过毫秒刻度就是 now < start_time，
+           now_ms() 只有 1ms 粒度：一旦跨过毫秒刻度就是 now < start_time，
            Uint32 相减会回绕成 42.9 亿 —— cp 立刻变成随机值，而且这个量级的 float 精度
            已经不够（每约 445ms 才跳一步），粒子会出生就是随机颜色、之后基本不再变色。
            JS 那边是有符号浮点减法，负的 elapsed 被 sin 平滑吃掉（≈0，出生为白），
